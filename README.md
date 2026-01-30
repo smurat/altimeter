@@ -19,7 +19,7 @@ This project stands on the shoulders of giants and adjacent explorations:
 
 ## Installation
 
-**Altimeter** is available on the [Open VSX Registry](https://open-vsx.org/extension/altimeter-for-antigravity/).
+**Altimeter** is available on the [Open VSX Registry](https://open-vsx.org/extension/pqub/altimeter/).
 
 1. Open the **Extensions** view in VS Code (or compatible editor).
 2. Search for `Altimeter`
