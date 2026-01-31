@@ -15,6 +15,10 @@ import { LSClient } from './core/LSClient';
 import { logger } from './core/Logger';
 import { ConversationService } from './services/ConversationService';
 import { StatsService } from './services/StatsService';
+import { DailyStatsAggregator } from './services/DailyStatsAggregator';
+import { DailyModelStats } from './shared/types';
+import { getOrderedDisplayNames } from './shared/ModelCatalog';
+import { StatsFormatter, TrendRow } from './services/StatsFormatter';
 
 // Initialize logger for console output
 logger.info = (msg: string) => console.log(`[INFO] ${msg}`);
@@ -42,30 +46,92 @@ function printStats(metadata: any[]): void {
 	const stats = StatsService.calculateStats(metadata);
 
 	console.log('\n📊 Token Usage by Model:');
-	console.log('─'.repeat(90));
+	console.log('─'.repeat(80));
 	console.log(
 		`${'Model'.padEnd(35)} | ${'Calls'.padStart(6)} | ` +
-			`${'Input'.padStart(10)} | ${'Output'.padStart(10)} | ${'Cache'.padStart(10)}`,
+			`${'Input'.padStart(10)} | ${'Output'.padStart(10)} | ${'Cache'.padStart(8)}`,
 	);
-	console.log('─'.repeat(90));
+	console.log('─'.repeat(80));
 
 	for (const model of stats.modelBreakdown) {
+		const totalObserved = model.input + model.cacheRead;
+		const efficiency = totalObserved > 0 ? Math.round((model.cacheRead / totalObserved) * 100) : 0;
 		console.log(
 			`${model.displayName.substring(0, 34).padEnd(35)} | ` +
 				`${model.calls.toString().padStart(6)} | ` +
-				`${model.input.toLocaleString().padStart(10)} | ` +
+				`${totalObserved.toLocaleString().padStart(10)} | ` +
 				`${model.output.toLocaleString().padStart(10)} | ` +
-				`${model.cacheRead.toLocaleString().padStart(10)}`,
+				`${efficiency.toString().padStart(7)}%`,
 		);
 	}
-	console.log('─'.repeat(90));
+	console.log('─'.repeat(80));
+	const grandTotalObserved = stats.totalInput + stats.totalCacheRead;
+	const totalEff =
+		grandTotalObserved > 0 ? Math.round((stats.totalCacheRead / grandTotalObserved) * 100) : 0;
 	console.log(
 		`${'TOTAL'.padEnd(35)} | ` +
 			`${stats.totalCalls.toString().padStart(6)} | ` +
-			`${stats.totalInput.toLocaleString().padStart(10)} | ` +
+			`${grandTotalObserved.toLocaleString().padStart(10)} | ` +
 			`${stats.totalOutput.toLocaleString().padStart(10)} | ` +
-			`${stats.totalCacheRead.toLocaleString().padStart(10)}`,
+			`${totalEff.toString().padStart(7)}%`,
 	);
+}
+
+function printTrend(title: string, rows: TrendRow[]): void {
+	console.log(StatsFormatter.formatTrendTable(title, rows));
+}
+
+function printDailyStats(dailyStats: DailyModelStats[]): void {
+	if (!dailyStats || dailyStats.length === 0) {
+		console.log('  No daily statistics found.');
+		return;
+	}
+
+	// 1. Identify all unique models
+	const allModels = new Set<string>();
+	for (const day of dailyStats) {
+		for (const model of Object.keys(day.models)) {
+			allModels.add(model);
+		}
+	}
+
+	const order = getOrderedDisplayNames();
+	const sortedModels = Array.from(allModels).sort((a, b) => {
+		const ia = order.indexOf(a);
+		const ib = order.indexOf(b);
+		return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+	});
+
+	// 2. Print trend for each model
+	for (const model of sortedModels) {
+		const rows = dailyStats
+			.map((day) => {
+				const stats = day.models[model];
+				if (!stats) {
+					return null;
+				}
+				return {
+					date: day.date,
+					input: stats.inputTokens + stats.cacheReadTokens,
+					output: stats.outputTokens,
+					cache: stats.cacheReadTokens,
+				};
+			})
+			.filter((r): r is NonNullable<typeof r> => r !== null);
+
+		if (rows.length > 0) {
+			printTrend(`Model: ${model}`, rows);
+		}
+	}
+
+	// 3. Print Daily Totals (aggregated across models)
+	const totalRows = dailyStats.map((day) => ({
+		date: day.date,
+		input: day.totals.inputTokens + day.totals.cacheReadTokens,
+		output: day.totals.outputTokens,
+		cache: day.totals.cacheReadTokens,
+	}));
+	printTrend('DAILY TOTALS (Aggregated)', totalRows);
 }
 
 async function main() {
@@ -138,10 +204,39 @@ async function main() {
 			console.log(`Fetching stats for: ${cascadeId}`);
 			const data = await conversationService.fetchCascadeMetadata(cascadeId);
 			printStats(data.generatorMetadata || []);
+		} else if (command === 'daily') {
+			console.log('Gathering daily statistics for the last 8 days...');
+
+			const cascades = await conversationService.fetchSortedConversations();
+
+			// Filter to last 8 days (matches WebView)
+			const filtered = DailyStatsAggregator.filterByModifiedDate(cascades, 8);
+			console.log(`Processing metadata for ${filtered.length} recent conversations...`);
+
+			const allMetadata: any[] = [];
+			for (const cascade of filtered) {
+				try {
+					const meta = await conversationService.fetchCascadeMetadata(cascade.cascadeId);
+					if (meta?.generatorMetadata) {
+						for (const item of meta.generatorMetadata) {
+							if (!item.timestamp && cascade.lastModifiedTime) {
+								item.timestamp = cascade.lastModifiedTime;
+							}
+							allMetadata.push(item);
+						}
+					}
+				} catch (e: any) {
+					logger.warn(`Skipping metadata for ${cascade.cascadeId}: ${e.message}`);
+				}
+			}
+
+			const dailyStats = DailyStatsAggregator.aggregateByDay(allMetadata, 8);
+			printDailyStats(dailyStats);
 		} else {
-			console.log('Available commands: list, stats');
+			console.log('Available commands: list, stats, daily');
 			console.log('  list [--latest]');
 			console.log('  stats --latest | --id <cascade_id>');
+			console.log('  daily');
 		}
 	} catch (e: any) {
 		logger.error(e.message);

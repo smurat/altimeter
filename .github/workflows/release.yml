@@ -11,6 +11,9 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -52,5 +55,5 @@ jobs:
           generate_release_notes: true
 
       - name: Publish to Open VSX
-        if: ${{ secrets.OPEN_VSX_TOKEN != '' }}
-        run: pnpm exec ovsx publish *.vsix -p ${{ secrets.OPEN_VSX_TOKEN }}
+        if: env.OPEN_VSX_TOKEN != ''
+        run: pnpm exec ovsx publish *.vsix -p "$OPEN_VSX_TOKEN"

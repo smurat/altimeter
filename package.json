@@ -4,6 +4,11 @@
 	"description": "An extension for monitoring used/spent tokens in Antigravity IDE. Simple token usage stats.",
 	"version": "0.0.1",
 	"publisher": "pqub",
+	"license": "MIT",
+	"homepage": "https://github.com/pqub/altimeter#readme",
+	"bugs": {
+		"url": "https://github.com/pqub/altimeter/issues"
+	},
 	"icon": "resources/icon.png",
 	"repository": {
 		"type": "git",
@@ -34,6 +39,12 @@
 				"title": "Refresh Stats",
 				"category": "Altimeter",
 				"icon": "$(refresh)"
+			},
+			{
+				"command": "altimeter.openStatistics",
+				"title": "Open Statistics",
+				"category": "Altimeter",
+				"icon": "$(graph)"
 			}
 		],
 		"viewsContainers": {
@@ -41,7 +52,7 @@
 				{
 					"id": "altimeter",
 					"title": "Altimeter",
-					"icon": "$(rocket)"
+					"icon": "$(graph)"
 				}
 			]
 		},
@@ -58,6 +69,11 @@
 			"view/title": [
 				{
 					"command": "altimeter.refresh",
+					"when": "view == altimeter.mainView",
+					"group": "navigation"
+				},
+				{
+					"command": "altimeter.openStatistics",
 					"when": "view == altimeter.mainView",
 					"group": "navigation"
 				}

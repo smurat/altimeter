@@ -53,6 +53,18 @@ suite('Manifest Validation Test Suite', () => {
 		expect(packageJson.repository.url).to.include('github.com');
 	});
 
+	test('should have Open VSX compliance fields', () => {
+		expect(packageJson.license).to.equal('MIT');
+		expect(packageJson.homepage).to.be.a('string').and.not.empty;
+		expect(packageJson.bugs).to.be.an('object');
+		expect(packageJson.bugs.url).to.be.a('string').and.not.empty;
+	});
+
+	test('should use the graph icon in views', () => {
+		const container = packageJson.contributes.viewsContainers.activitybar[0];
+		expect(container.icon).to.equal('$(graph)');
+	});
+
 	test('main entry point file should be dist/extension.js', () => {
 		expect(packageJson.main).to.equal('./dist/extension.js');
 	});

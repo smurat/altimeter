@@ -13,3 +13,7 @@ out/**
 .vscode-test.mjs
 pnpm-lock.yaml
 scripts/**
+.husky/**
+.github/**
+.prettierignore
+pnpm-workspace.yaml

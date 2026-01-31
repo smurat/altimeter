@@ -8,6 +8,7 @@
 
 - **Automatic Service Discovery**: Should support separate processes on Windows, macOS, and Linux.
 - **Token Statistics**: Clear breakdown of **Input**, **Cache**, and **Output** tokens.
+- **Statistics Dashboard**: Visual horizontal stacked bar charts and daily breakdown tables for long-term usage trends.
 - **Sidebar**: View current session information and usage stats directly in the sidebar.
 
 ## Inspiration & References
@@ -51,7 +52,7 @@ pnpm run package
 ## Running the Extension
 
 1. **Install** the `.vsix` file or run in development mode (Press `F5`).
-2. **Access**: Look for the **Rocket 🚀** icon in the VS Code Activity Bar.
+2. **Access**: Look for the **Graph 📈** icon in the VS Code Activity Bar.
 3. **Sidebar**: The Altimeter view will open in the sidebar, displaying token stats for the current session.
 4. **Refresh**: Use the refresh icon in the view title menu to manually fetch the latest stats.
 

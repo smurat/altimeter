@@ -5,6 +5,7 @@ import { CacheManager } from './core/CacheManager';
 import { logger } from './core/Logger';
 import { StatsService } from './services/StatsService';
 import { ConversationService } from './services/ConversationService';
+import { StatisticsPanel } from './panels/StatisticsPanel';
 import { AggregatedStats } from './shared/types';
 
 let client: LSClient | undefined;
@@ -67,7 +68,7 @@ class AltimeterViewProvider implements vscode.WebviewViewProvider {
 		this._stopAutoRefresh();
 		this._refreshInterval = setInterval(() => {
 			this._fetchCurrentSessionStats();
-		}, 30000);
+		}, 60000);
 	}
 
 	private _stopAutoRefresh() {
@@ -286,6 +287,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('altimeter.refresh', () => {
 			provider.triggerRefresh();
+		}),
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('altimeter.openStatistics', () => {
+			StatisticsPanel.createOrShow(context.extensionUri);
 		}),
 	);
 }

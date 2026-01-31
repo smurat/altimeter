@@ -14,11 +14,16 @@ suite('ModelCatalog Test Suite', () => {
 		expect(getModelDisplayName(unknownModel)).to.equal(unknownModel);
 	});
 
-	test('should have the core mapping', () => {
-		expect(MODEL_CATALOG).to.have.property('MODEL_PLACEHOLDER_M8', 'Gemini 3 Pro (High)');
-		expect(MODEL_CATALOG).to.have.property(
-			'MODEL_OPENAI_GPT_OSS_120B_MEDIUM',
-			'GPT-OSS 120B (Medium)',
-		);
+	test('should have the core mapping with displayName and color', () => {
+		expect(MODEL_CATALOG['MODEL_PLACEHOLDER_M8']).to.deep.equal({
+			displayName: 'Gemini 3 Pro (High)',
+			color: '#185ABC',
+			order: 2,
+		});
+		expect(MODEL_CATALOG['MODEL_OPENAI_GPT_OSS_120B_MEDIUM']).to.deep.equal({
+			displayName: 'GPT-OSS 120B (Medium)',
+			color: '#10B981',
+			order: 7,
+		});
 	});
 });
