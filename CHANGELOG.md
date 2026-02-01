@@ -2,11 +2,17 @@
 
 All notable changes to the "altimeter" extension will be documented in this file.
 
-## [0.0.3]
+## [0.0.3] - 2026-02-01
 
 ### ✨ New Features
 
 - **API Metric**: Added "API Calls" column to statistics tables for tracking request volume.
+- **Offline Mode**: Dashboard now works offline with bundled Chart.js.
+
+### 🐛 Fixes
+
+- **Accurate Statistics**: Fixed day calculation and timezone handling to ensure daily usage is shown correctly.
+- **Stability**: Fixed "Generate Statistics" button unresponsiveness.
 
 ## [0.0.2] - 2026-01-31
 

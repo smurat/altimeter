@@ -5,3 +5,4 @@ node_modules
 *.vsix
 webview-ui/build
 webview-ui/node_modules
+resources/libs/

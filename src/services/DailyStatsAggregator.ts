@@ -22,6 +22,9 @@ interface MetadataItem {
 			outputTokens?: string | number;
 			cacheReadTokens?: string | number;
 		};
+		chatStartMetadata?: {
+			createdAt?: string;
+		};
 	};
 	timestamp?: string;
 }
@@ -32,10 +35,11 @@ export class DailyStatsAggregator {
 	 */
 	static filterByModifiedDate(
 		cascades: CascadeTrajectory[],
-		cutoffDays: number,
+		dayCount: number,
 	): CascadeTrajectory[] {
 		const cutoffDate = new Date();
-		cutoffDate.setDate(cutoffDate.getDate() - cutoffDays);
+		// If we want 8 days including today, the oldest day is Today - 7 days.
+		cutoffDate.setDate(cutoffDate.getDate() - (dayCount - 1));
 		cutoffDate.setHours(0, 0, 0, 0);
 
 		return cascades.filter((c) => {
@@ -52,24 +56,56 @@ export class DailyStatsAggregator {
 	 */
 	static aggregateByDay(allMetadata: MetadataItem[], dayCount: number = 8): DailyModelStats[] {
 		const dailyMap = new Map<string, DailyModelStats>();
+		const today = new Date();
 
 		// Initialize days
 		for (let i = 0; i < dayCount; i++) {
-			const date = new Date();
-			date.setDate(date.getDate() - i);
+			const date = new Date(today);
+			date.setDate(today.getDate() - i);
 			const dateStr = this.formatDate(date);
 			dailyMap.set(dateStr, this.createEmptyDayStats(dateStr));
 		}
 
+		// Bucket for unknown dates
+		const unknownDateStr = 'Unknown Date';
+		if (!dailyMap.has(unknownDateStr)) {
+			dailyMap.set(unknownDateStr, this.createEmptyDayStats(unknownDateStr));
+		}
+
 		// Process each metadata item
 		for (const item of allMetadata) {
-			const dateStr = this.extractDateFromItem(item);
-			if (!dateStr || !dailyMap.has(dateStr)) {
-				continue;
+			let dateStr = this.extractDateFromItem(item);
+			if (!dateStr) {
+				dateStr = unknownDateStr;
+			}
+
+			if (!dailyMap.has(dateStr)) {
+				// If date is outside range (older than 8 days), usually we skip.
+				// But if user wants ALL stats, we might lose them here if we strictly filter.
+				// However, 'aggregateByDay' implies filtering by the days initialized.
+				// To preserve "global statistics" as requested, we might need a catch-all for "Older"?
+				// For now, let's treat "Unknown" as a specific valid bucket.
+				// Older VALID timestamps are strictly filtered by 'Daily' visualization nature.
+				// But 'null' timestamps are truly lost without this.
+				if (dateStr === unknownDateStr) {
+					// Fallthrough to add to Unknown
+				} else {
+					continue;
+				}
 			}
 
 			const dayStats = dailyMap.get(dateStr)!;
 			this.addItemToDay(dayStats, item);
+		}
+
+		// Remove Unknown Date if empty
+		const unknownStats = dailyMap.get(unknownDateStr);
+		if (
+			unknownStats &&
+			unknownStats.totals.inputTokens === 0 &&
+			unknownStats.totals.outputTokens === 0
+		) {
+			dailyMap.delete(unknownDateStr);
 		}
 
 		// Calculate cache efficiency and sort by date descending
@@ -78,11 +114,23 @@ export class DailyStatsAggregator {
 			day.cacheEfficiency = this.calculateCacheEfficiency(day);
 		}
 
-		return result.sort((a, b) => b.date.localeCompare(a.date));
+		return result.sort((a, b) => {
+			// Ensure Unknown is always last
+			if (a.date === unknownDateStr) {
+				return 1;
+			}
+			if (b.date === unknownDateStr) {
+				return -1;
+			}
+			return b.date.localeCompare(a.date);
+		});
 	}
 
 	private static formatDate(date: Date): string {
-		return date.toISOString().split('T')[0];
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		return `${year}-${month}-${day}`;
 	}
 
 	private static createEmptyDayStats(date: string): DailyModelStats {
@@ -95,11 +143,16 @@ export class DailyStatsAggregator {
 	}
 
 	private static extractDateFromItem(item: MetadataItem): string | null {
-		if (!item.timestamp) {
+		const timestamp = item.timestamp || item.chatModel?.chatStartMetadata?.createdAt;
+		if (!timestamp) {
 			return null;
 		}
 		try {
-			return new Date(item.timestamp).toISOString().split('T')[0];
+			const date = new Date(timestamp);
+			const year = date.getFullYear();
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const day = String(date.getDate()).padStart(2, '0');
+			return `${year}-${month}-${day}`;
 		} catch {
 			return null;
 		}

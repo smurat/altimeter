@@ -69,4 +69,57 @@ suite('DailyStatsAggregator Test Suite', () => {
 		expect(stats[0].totals.inputTokens).to.equal(0);
 		expect(stats[0].models['unknown']).to.exist;
 	});
+
+	test('should fallback to chatStartMetadata.createdAt when timestamp is missing', () => {
+		const specificDate = '2026-01-20T10:53:04Z';
+		const dateStr = '2026-01-20';
+		const metadata = [
+			{
+				chatModel: {
+					model: 'MODEL_PLACEHOLDER_M18',
+					usage: { inputTokens: 500 },
+					chatStartMetadata: {
+						createdAt: specificDate,
+					},
+				},
+			},
+		];
+
+		// We need to ensure the initialization range includes this date, or it might be filtered out
+		// Depending on current date, we'll just check if it finds it.
+		// For the test, let's just use aggregateByDay and check if '2026-01-20' exists in the map
+		// if we mock enough days.
+		const stats = DailyStatsAggregator.aggregateByDay(metadata, 100);
+		const targetStats = stats.find((s) => s.date === dateStr);
+		expect(targetStats).to.exist;
+		expect(targetStats?.totals.inputTokens).to.equal(500);
+	});
+
+	test('should bucket items with no date into "Unknown Date"', () => {
+		const metadata = [
+			{
+				chatModel: {
+					model: 'Ghost Model',
+					usage: { inputTokens: 999 },
+				},
+			},
+		];
+
+		const stats = DailyStatsAggregator.aggregateByDay(metadata, 1);
+		const unknown = stats.find((s) => s.date === 'Unknown Date');
+		expect(unknown).to.exist;
+		expect(unknown?.totals.inputTokens).to.equal(999);
+	});
+
+	test('should use local date components instead of UTC ISO string', () => {
+		// Create a date that might differ between local and UTC
+		// e.g., 2026-02-01 01:00 AM in a GMT+2 timezone is still 2026-02-01 local.
+		// In UTC it would be 2026-01-31 11:00 PM.
+		const localDate = new Date(2026, 1, 1, 1, 0, 0); // Feb 1st 2026, 01:00 local
+		const dateStr = '2026-02-01'; // locally formatted
+
+		// @ts-expect-error - accessing private for testing
+		const formatted = DailyStatsAggregator.formatDate(localDate);
+		expect(formatted).to.equal(dateStr);
+	});
 });

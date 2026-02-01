@@ -34,9 +34,29 @@ async function main() {
 		outfile: 'dist/extension.js',
 		external: ['vscode'],
 		logLevel: 'silent',
+		loader: {
+			'.html': 'text',
+		},
 		plugins: [
-			/* add to the end of plugins array */
 			esbuildProblemMatcherPlugin,
+			{
+				name: 'copy-chart-js',
+				setup(build) {
+					build.onEnd(() => {
+						const fs = require('fs');
+						const path = require('path');
+						const source = path.resolve(__dirname, 'node_modules/chart.js/dist/chart.umd.min.js');
+						const destDir = path.resolve(__dirname, 'resources/libs');
+						const dest = path.join(destDir, 'chart.min.js');
+
+						if (!fs.existsSync(destDir)) {
+							fs.mkdirSync(destDir, { recursive: true });
+						}
+						fs.copyFileSync(source, dest);
+						console.log('[build] Copied chart.js to resources/libs/chart.min.js');
+					});
+				},
+			},
 		],
 	});
 

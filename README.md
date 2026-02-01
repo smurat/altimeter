@@ -57,6 +57,11 @@ pnpm run package
 4. **Refresh**: Use the refresh icon in the view title menu to manually fetch the latest stats.
 5. **Statistics Dashboard**: Click the **"Open Statistics"** button (bar chart icon) in the view title menu to open the full dashboard. This view shows detailed horizontal stacked bar charts and daily usage tables for the last 8 days (1 week window).
 
+## Commands
+
+- `Altimeter: Refresh Stats`: Manually refresh the data in the side panel.
+- `Altimeter: Open Statistics`: Open the full-screen visual dashboard with historical charts and daily usage tables.
+
 ## License
 
 MIT

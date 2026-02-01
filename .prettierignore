@@ -5,3 +5,4 @@ out
 pnpm-lock.yaml
 .vscode-test.mjs
 package.json
+resources
