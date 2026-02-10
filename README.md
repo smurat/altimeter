@@ -52,7 +52,11 @@ pnpm run package
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+Contributions are welcome! This project accepts contributions from forks back to the upstream repository.
+
+For detailed guidelines on how to contribute, including how to create pull requests to the owner's repository (pqub/altimeter), please see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+For major changes, please open an issue first to discuss what you would like to change.
 
 ## Running the Extension
 
