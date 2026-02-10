@@ -5,16 +5,19 @@ Thank you for your interest in contributing to Altimeter! This document provides
 ## Repository Structure
 
 - **Upstream Repository**: [pqub/altimeter](https://github.com/pqub/altimeter) - The main/owner repository
-- **Fork Repository**: [smurat/altimeter](https://github.com/smurat/altimeter) - Development fork
+- **Your Fork**: `<your-username>/altimeter` - Your personal fork for development
 
 ## How to Contribute
 
 ### 1. Setting Up Your Development Environment
 
 ```bash
-# Clone the repository (if you haven't already)
-git clone https://github.com/smurat/altimeter.git
+# Fork the repository on GitHub first, then clone your fork
+git clone https://github.com/<your-username>/altimeter.git
 cd altimeter
+
+# Add the upstream repository as a remote
+git remote add upstream https://github.com/pqub/altimeter.git
 
 # Install dependencies
 pnpm install
@@ -91,7 +94,7 @@ To contribute your changes back to the main repository (pqub/altimeter):
 5. Set the following:
    - **base repository**: `pqub/altimeter`
    - **base branch**: `main` (or appropriate target branch)
-   - **head repository**: `smurat/altimeter`
+   - **head repository**: `<your-username>/altimeter`
    - **compare branch**: `feature/your-feature-name`
 
 6. Fill in the PR description with:
@@ -112,7 +115,7 @@ git checkout feature/your-feature-name
 git push origin feature/your-feature-name
 
 # Create PR to upstream
-gh pr create --repo pqub/altimeter --base main --head smurat:feature/your-feature-name
+gh pr create --repo pqub/altimeter --base main --head <your-username>:feature/your-feature-name
 ```
 
 ### 5. After Creating the Pull Request
